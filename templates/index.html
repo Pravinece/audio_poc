@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Round 1 - Reading Evaluation</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 60px auto; padding: 0 20px; background: #f5f5f5; }
+    h2 { color: #333; }
+    #script-box {
+      background: #fff; border-left: 4px solid #4a90e2; padding: 16px 20px;
+      font-size: 1.2em; border-radius: 4px; margin-bottom: 24px; color: #222;
+    }
+    .btn {
+      padding: 10px 24px; font-size: 1em; border: none; border-radius: 4px;
+      cursor: pointer; margin-right: 10px;
+    }
+    #start-btn { background: #4a90e2; color: #fff; }
+    #stop-btn  { background: #e24a4a; color: #fff; display: none; }
+    #status    { margin-top: 12px; font-size: 0.95em; color: #666; }
+
+    #results { display: none; background: #fff; border-radius: 6px; padding: 24px; margin-top: 28px; }
+    #results h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .result-row:last-child { border-bottom: none; }
+    .label { color: #555; }
+    .value { font-weight: bold; color: #222; }
+    .score-big { font-size: 2em; font-weight: bold; color: #4a90e2; text-align: center; margin: 16px 0 8px; }
+    .misread-list { color: #e24a4a; font-size: 0.95em; }
+    .transcript-box { background: #f9f9f9; padding: 10px; border-radius: 4px; font-size: 0.95em; color: #444; margin-top: 4px; }
+    #error-msg { color: #e24a4a; margin-top: 12px; }
+  </style>
+</head>
+<body>
+
+  <h2>Round 1 — Reading Evaluation</h2>
+  <p>Read the sentence below aloud clearly:</p>
+
+  <div id="script-box">{{ script }}</div>
+
+  <button class="btn" id="start-btn">🎙 Start Recording</button>
+  <button class="btn" id="stop-btn">⏹ Stop & Evaluate</button>
+  <div id="status"></div>
+  <div id="error-msg"></div>
+
+  <div id="results">
+    <h3>Evaluation Results</h3>
+    <div class="score-big" id="r1-score">—</div>
+    <div style="text-align:center;color:#888;margin-bottom:16px;">Round 1 Score (out of 100)</div>
+
+    <div class="result-row">
+      <span class="label">Accuracy</span>
+      <span class="value" id="accuracy">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Word Error Rate (WER)</span>
+      <span class="value" id="wer">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Fluency Score</span>
+      <span class="value" id="fluency-score">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Speech Rate (WPM)</span>
+      <span class="value" id="wpm">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Pause Count</span>
+      <span class="value" id="pauses">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Pitch Variance (Hz std)</span>
+      <span class="value" id="pitch">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Duration</span>
+      <span class="value" id="duration">—</span>
+    </div>
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label">Misread / Skipped Words</span>
+      <span class="misread-list" id="misread">—</span>
+    </div>
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label">Your Transcript</span>
+      <div class="transcript-box" id="transcript">—</div>
+    </div>
+  </div>
+
+<script>
+  let mediaRecorder, audioChunks = [];
+
+  document.getElementById("start-btn").onclick = async () => {
+    audioChunks = [];
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+    mediaRecorder.start();
+
+    document.getElementById("start-btn").style.display = "none";
+    document.getElementById("stop-btn").style.display = "inline-block";
+    document.getElementById("status").textContent = "Recording... speak now.";
+    document.getElementById("error-msg").textContent = "";
+    document.getElementById("results").style.display = "none";
+  };
+
+  document.getElementById("stop-btn").onclick = () => {
+    console.log("Stopping recording...", audioChunks.length);
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+
+    document.getElementById("stop-btn").style.display = "none";
+    document.getElementById("start-btn").style.display = "inline-block";
+    document.getElementById("status").textContent = "Processing...";
+
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(audioChunks, { type: "audio/webm" });
+      const formData = new FormData();
+      formData.append("audio", blob, "recording.webm");
+
+      try {
+        const res = await fetch("/evaluate", { method: "POST", body: formData });
+        const data = await res.json();
+
+        if (data.error) {
+          document.getElementById("error-msg").textContent = "Error: " + data.error;
+          document.getElementById("status").textContent = "";
+          return;
+        }
+
+        document.getElementById("r1-score").textContent     = data.round1_score;
+        document.getElementById("accuracy").textContent     = data.accuracy_percent + "%";
+        document.getElementById("wer").textContent          = (data.wer * 100).toFixed(2) + "%";
+        document.getElementById("fluency-score").textContent = data.fluency_score;
+        document.getElementById("wpm").textContent          = data.fluency.approx_wpm;
+        document.getElementById("pauses").textContent       = data.fluency.pause_count;
+        document.getElementById("pitch").textContent        = data.fluency.pitch_variance;
+        document.getElementById("duration").textContent     = data.fluency.duration_sec + "s";
+        document.getElementById("misread").textContent      = data.misread_words.length ? data.misread_words.join(", ") : "None ✓";
+        document.getElementById("transcript").textContent   = data.transcript || "(no speech detected)";
+
+        document.getElementById("results").style.display = "block";
+        document.getElementById("status").textContent = "Done.";
+      } catch (err) {
+        document.getElementById("error-msg").textContent = "Request failed: " + err.message;
+        document.getElementById("status").textContent = "";
+      }
+    };
+  };
+</script>
+</body>
+</html>

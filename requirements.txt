@@ -1,0 +1,5 @@
+flask
+pocketsphinx
+librosa
+jiwer
+numpy
