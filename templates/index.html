@@ -92,8 +92,8 @@
     audioChunks = [];
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-    mediaRecorder.start();
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.start(250);  // collect chunks every 250ms
 
     document.getElementById("start-btn").style.display = "none";
     document.getElementById("stop-btn").style.display = "inline-block";
@@ -103,15 +103,13 @@
   };
 
   document.getElementById("stop-btn").onclick = () => {
-    console.log("Stopping recording...", audioChunks.length);
-    mediaRecorder.stop();
-    mediaRecorder.stream.getTracks().forEach(t => t.stop());
-
     document.getElementById("stop-btn").style.display = "none";
     document.getElementById("start-btn").style.display = "inline-block";
     document.getElementById("status").textContent = "Processing...";
 
+    // assign onstop BEFORE calling stop()
     mediaRecorder.onstop = async () => {
+      console.log("chunks collected:", audioChunks.length);
       const blob = new Blob(audioChunks, { type: "audio/webm" });
       const formData = new FormData();
       formData.append("audio", blob, "recording.webm");
@@ -126,16 +124,16 @@
           return;
         }
 
-        document.getElementById("r1-score").textContent     = data.round1_score;
-        document.getElementById("accuracy").textContent     = data.accuracy_percent + "%";
-        document.getElementById("wer").textContent          = (data.wer * 100).toFixed(2) + "%";
+        document.getElementById("r1-score").textContent      = data.round1_score;
+        document.getElementById("accuracy").textContent      = data.accuracy_percent + "%";
+        document.getElementById("wer").textContent           = (data.wer * 100).toFixed(2) + "%";
         document.getElementById("fluency-score").textContent = data.fluency_score;
-        document.getElementById("wpm").textContent          = data.fluency.approx_wpm;
-        document.getElementById("pauses").textContent       = data.fluency.pause_count;
-        document.getElementById("pitch").textContent        = data.fluency.pitch_variance;
-        document.getElementById("duration").textContent     = data.fluency.duration_sec + "s";
-        document.getElementById("misread").textContent      = data.misread_words.length ? data.misread_words.join(", ") : "None ✓";
-        document.getElementById("transcript").textContent   = data.transcript || "(no speech detected)";
+        document.getElementById("wpm").textContent           = data.fluency.approx_wpm;
+        document.getElementById("pauses").textContent        = data.fluency.pause_count;
+        document.getElementById("pitch").textContent         = data.fluency.pitch_variance;
+        document.getElementById("duration").textContent      = data.fluency.duration_sec + "s";
+        document.getElementById("misread").textContent       = data.misread_words.length ? data.misread_words.join(", ") : "None ✓";
+        document.getElementById("transcript").textContent    = data.transcript || "(no speech detected)";
 
         document.getElementById("results").style.display = "block";
         document.getElementById("status").textContent = "Done.";
@@ -144,6 +142,9 @@
         document.getElementById("status").textContent = "";
       }
     };
+
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
   };
 </script>
 </body>

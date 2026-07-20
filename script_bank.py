@@ -1,3 +1,15 @@
+# SCRIPTS = [
+#     "The quick.",
+#     "She sells ",
+#     "Communication ",
+#     "The candidate ",
+#     "Please describe ",
+#     "Effective ",
+#     "The quarterly",
+#     "Technology ",
+#     "He carefully ",
+#     "Adaptability",
+# ]
 SCRIPTS = [
     "The quick brown fox jumps over the lazy dog.",
     "She sells seashells by the seashore every morning.",

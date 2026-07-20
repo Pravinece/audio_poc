@@ -1,5 +1,9 @@
 flask
-pocketsphinx
+vosk
 librosa
 jiwer
 numpy
+g2p_en
+scikit-learn
+rapidfuzz
+nltk

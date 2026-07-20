@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Round 2 - Pronunciation Evaluation</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 60px auto; padding: 0 20px; background: #f5f5f5; }
+    h2 { color: #333; }
+
+    #word-box {
+      background: #fff; border-left: 4px solid #9b59b6; padding: 16px 20px;
+      border-radius: 4px; margin-bottom: 8px;
+    }
+    #word-box .word { font-size: 2em; font-weight: bold; color: #222; }
+    #word-box .ipa  { font-size: 1em; color: #888; margin-top: 4px; }
+
+    #hint-box {
+      background: #f0eaf7; border-radius: 4px; padding: 10px 16px;
+      font-size: 0.95em; color: #555; margin-bottom: 24px;
+    }
+
+    .btn { padding: 10px 24px; font-size: 1em; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+    #start-btn { background: #9b59b6; color: #fff; }
+    #stop-btn  { background: #e24a4a; color: #fff; display: none; }
+    #status    { margin-top: 12px; font-size: 0.95em; color: #666; }
+    #error-msg { color: #e24a4a; margin-top: 12px; }
+
+    #results { display: none; background: #fff; border-radius: 6px; padding: 24px; margin-top: 28px; }
+    #results h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .result-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .result-row:last-child { border-bottom: none; }
+    .label { color: #555; }
+    .value { font-weight: bold; color: #222; }
+    .score-big { font-size: 2em; font-weight: bold; color: #9b59b6; text-align: center; margin: 16px 0 8px; }
+
+    .phoneme-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .ph { padding: 4px 10px; border-radius: 4px; font-size: 0.9em; font-weight: bold; }
+    .ph-correct { background: #d4edda; color: #155724; }
+    .ph-wrong   { background: #f8d7da; color: #721c24; }
+    .ph-extra   { background: #fff3cd; color: #856404; }
+
+    .transcript-box { background: #f9f9f9; padding: 10px; border-radius: 4px; font-size: 0.95em; color: #444; margin-top: 4px; }
+    .nav-link { display: inline-block; margin-top: 20px; color: #4a90e2; text-decoration: none; font-size: 0.95em; }
+  </style>
+</head>
+<body>
+
+  <h2>Round 2 — Pronunciation Evaluation</h2>
+  <p>Pronounce the medical word below clearly:</p>
+
+  <div id="word-box">
+    <div class="word">{{ word_entry.word }}</div>
+    <div class="ipa">IPA: {{ word_entry.ipa }}</div>
+  </div>
+  <div id="hint-box">💡 {{ word_entry.hint }}</div>
+
+  <button class="btn" id="start-btn">🎙 Start Recording</button>
+  <button class="btn" id="stop-btn">⏹ Stop & Evaluate</button>
+  <div id="status"></div>
+  <div id="error-msg"></div>
+
+  <div id="results">
+    <h3>Evaluation Results</h3>
+    <div class="score-big" id="r2-score">—</div>
+    <div style="text-align:center;color:#888;margin-bottom:16px;">Round 2 Score (out of 100)</div>
+
+    <div class="result-row">
+      <span class="label">Phoneme Accuracy</span>
+      <span class="value" id="ph-accuracy">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Word Recognized</span>
+      <span class="value" id="word-match">—</span>
+    </div>
+    <div class="result-row">
+      <span class="label">Acoustic (MFCC) Score</span>
+      <span class="value" id="mfcc-score">—</span>
+    </div>
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label">Your Transcript</span>
+      <div class="transcript-box" id="transcript">—</div>
+    </div>
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label" style="margin-bottom:6px;">Phoneme Breakdown</span>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:0.85em;color:#888;margin-bottom:4px;">Reference Phonemes</div>
+        <div class="phoneme-row" id="ref-phonemes"></div>
+      </div>
+      <div>
+        <div style="font-size:0.85em;color:#888;margin-bottom:4px;">Your Phonemes</div>
+        <div class="phoneme-row" id="user-phonemes"></div>
+      </div>
+      <div style="margin-top:10px;">
+        <div style="font-size:0.85em;color:#888;margin-bottom:4px;">
+          <span style="background:#d4edda;color:#155724;padding:2px 8px;border-radius:3px;">✓ Correct</span>
+          &nbsp;
+          <span style="background:#f8d7da;color:#721c24;padding:2px 8px;border-radius:3px;">✗ Wrong / Missing</span>
+          &nbsp;
+          <span style="background:#fff3cd;color:#856404;padding:2px 8px;border-radius:3px;">~ Extra</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <a class="nav-link" href="/">← Back to Round 1</a>
+
+<script>
+  let mediaRecorder, audioChunks = [];
+
+  document.getElementById("start-btn").onclick = async () => {
+    audioChunks = [];
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.start(250);
+
+    document.getElementById("start-btn").style.display = "none";
+    document.getElementById("stop-btn").style.display = "inline-block";
+    document.getElementById("status").textContent = "Recording... pronounce the word now.";
+    document.getElementById("error-msg").textContent = "";
+    document.getElementById("results").style.display = "none";
+  };
+
+  document.getElementById("stop-btn").onclick = () => {
+    document.getElementById("stop-btn").style.display = "none";
+    document.getElementById("start-btn").style.display = "inline-block";
+    document.getElementById("status").textContent = "Processing...";
+
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(audioChunks, { type: "audio/webm" });
+      const formData = new FormData();
+      formData.append("audio", blob, "recording.webm");
+
+      try {
+        const res  = await fetch("/evaluate_round2", { method: "POST", body: formData });
+        const data = await res.json();
+
+        if (data.error) {
+          document.getElementById("error-msg").textContent = "Error: " + data.error;
+          document.getElementById("status").textContent = "";
+          return;
+        }
+
+        document.getElementById("r2-score").textContent    = data.round2_score;
+        document.getElementById("ph-accuracy").textContent = data.phoneme_accuracy + "%";
+        document.getElementById("word-match").textContent  = data.word_match ? "✓ Yes" : "✗ No";
+        document.getElementById("mfcc-score").textContent  = data.mfcc_score;
+        document.getElementById("transcript").textContent  = data.transcript || "(no speech detected)";
+
+        // Phoneme breakdown — reference and user side by side
+        const wrongSet   = new Set(data.wrong_phonemes);
+        const correctSet = new Set(data.correct_phonemes);
+        const userPhSet  = new Set(data.candidate_phonemes);
+
+        // Reference phonemes — green if correct, red if missing
+        const refDiv = document.getElementById("ref-phonemes");
+        refDiv.innerHTML = "";
+        data.reference_phonemes.forEach(ph => {
+          const span = document.createElement("span");
+          span.className = "ph " + (wrongSet.has(ph) ? "ph-wrong" : "ph-correct");
+          span.textContent = ph;
+          refDiv.appendChild(span);
+        });
+
+        // User phonemes — green if matches reference, yellow if extra
+        const userDiv = document.getElementById("user-phonemes");
+        userDiv.innerHTML = "";
+        if (data.candidate_phonemes.length === 0) {
+          userDiv.innerHTML = "<span style='color:#888;font-size:0.9em;'>(no phonemes detected)</span>";
+        } else {
+          const refSet = new Set(data.reference_phonemes);
+          data.candidate_phonemes.forEach(ph => {
+            const span = document.createElement("span");
+            span.className = "ph " + (refSet.has(ph) ? "ph-correct" : "ph-extra");
+            span.textContent = ph;
+            userDiv.appendChild(span);
+          });
+        }
+
+        document.getElementById("results").style.display = "block";
+        document.getElementById("status").textContent = "Done.";
+      } catch (err) {
+        document.getElementById("error-msg").textContent = "Request failed: " + err.message;
+        document.getElementById("status").textContent = "";
+      }
+    };
+
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  };
+</script>
+</body>
+</html>
