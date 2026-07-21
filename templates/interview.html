@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>5-Minute Interview</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; background: #f5f5f5; }
+    h2 { color: #333; margin-bottom: 4px; }
+    .round-label { font-size: 0.85em; color: #888; margin-bottom: 16px; }
+
+    /* Timer */
+    #timer-bar-wrap { background: #e0e0e0; border-radius: 6px; height: 10px; margin-bottom: 6px; }
+    #timer-bar { height: 10px; border-radius: 6px; background: #4a90e2; transition: width 1s linear, background 0.5s; width: 100%; }
+    #timer-text { font-size: 1.1em; font-weight: bold; color: #333; margin-bottom: 18px; }
+
+    /* Question box */
+    #question-box {
+      background: #fff; border-left: 4px solid #4a90e2;
+      padding: 16px 20px; font-size: 1.1em; border-radius: 4px;
+      margin-bottom: 8px; color: #222; line-height: 1.6;
+    }
+    #hint-box { background: #eef4ff; border-radius: 4px; padding: 8px 14px; font-size: 0.9em; color: #555; margin-bottom: 20px; }
+
+    /* Buttons */
+    .btn { padding: 10px 22px; font-size: 1em; border: none; border-radius: 4px; cursor: pointer; margin-right: 8px; }
+    #record-btn { background: #4a90e2; color: #fff; }
+    #stop-btn   { background: #e24a4a; color: #fff; display: none; }
+    #next-btn   { background: #27ae60; color: #fff; display: none; }
+
+    #status    { margin-top: 10px; font-size: 0.9em; color: #666; }
+    #error-msg { color: #e24a4a; margin-top: 8px; font-size: 0.9em; }
+
+    /* Replay */
+    #replay-box { display: none; margin-top: 12px; }
+    #replay-box label { font-size: 0.85em; color: #555; display: block; margin-bottom: 4px; }
+
+    /* Results */
+    #results { display: none; background: #fff; border-radius: 6px; padding: 20px; margin-top: 20px; }
+    #results h3 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; color: #333; }
+    .result-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.93em; }
+    .result-row:last-child { border-bottom: none; }
+    .label { color: #555; }
+    .value { font-weight: bold; color: #222; }
+    .score-big { font-size: 2em; font-weight: bold; text-align: center; margin: 12px 0 4px; }
+    .r1-color { color: #4a90e2; }
+    .r2-color { color: #9b59b6; }
+    .r3-color { color: #27ae60; }
+    .text-box { background: #f9f9f9; padding: 8px; border-radius: 4px; font-size: 0.9em; color: #444; margin-top: 4px; }
+    .kw { padding: 3px 9px; border-radius: 4px; font-size: 0.85em; font-weight: bold; margin: 2px; display: inline-block; }
+    .kw-matched { background: #d4edda; color: #155724; }
+    .kw-missing { background: #f8d7da; color: #721c24; }
+    .ph { padding: 3px 9px; border-radius: 4px; font-size: 0.85em; font-weight: bold; margin: 2px; display: inline-block; }
+    .ph-correct { background: #d4edda; color: #155724; }
+    .ph-wrong   { background: #f8d7da; color: #721c24; }
+    .ph-extra   { background: #fff3cd; color: #856404; }
+    .verdict-box { text-align: center; font-size: 0.95em; font-weight: bold; padding: 5px 14px; border-radius: 20px; display: inline-block; margin: 0 auto 12px; width: 100%; }
+    .verdict-correct   { background: #d4edda; color: #155724; }
+    .verdict-partial   { background: #fff3cd; color: #856404; }
+    .verdict-incorrect { background: #f8d7da; color: #721c24; }
+
+    /* Progress dots */
+    #progress { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; background: #ddd; border: 2px solid #bbb; }
+    .dot.done { background: #27ae60; border-color: #27ae60; }
+    .dot.active { background: #4a90e2; border-color: #4a90e2; }
+
+    /* Final summary */
+    #summary { display: none; background: #fff; border-radius: 8px; padding: 28px; margin-top: 24px; text-align: center; }
+    #summary h2 { color: #333; }
+    .summary-score { font-size: 2.5em; font-weight: bold; color: #4a90e2; }
+
+    /* Timeout warning */
+    #timeout-msg { display: none; background: #fff3cd; color: #856404; padding: 8px 14px; border-radius: 4px; margin-top: 10px; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+
+<h2 id="round-title">Interview</h2>
+<div class="round-label" id="round-label"></div>
+
+<div id="progress"></div>
+
+<div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+<div id="timer-text"></div>
+
+<div id="question-box"></div>
+<div id="hint-box" style="display:none;"></div>
+
+<button class="btn" id="record-btn">🎙 Start Recording</button>
+<button class="btn" id="stop-btn">⏹ Stop & Submit</button>
+<button class="btn" id="next-btn">Next ➜</button>
+
+<div id="timeout-msg">⏰ Time's up! Recording stopped automatically.</div>
+<div id="status"></div>
+<div id="error-msg"></div>
+
+<div id="replay-box">
+  <label>🔊 Replay:</label>
+  <audio id="replay-player" controls style="width:100%;"></audio>
+</div>
+
+<div id="results"></div>
+<div id="summary"></div>
+
+<script>
+// ─── Data ────────────────────────────────────────────────────────────────────
+const SCRIPTS = [
+  "The physician prescribed acetaminophen and ibuprofen to manage the patient's postoperative pain and reduce inflammation after the surgical procedure.",
+  "Amoxicillin is a broad spectrum antibiotic commonly prescribed for bacterial infections. The pharmacist advised the patient to complete the full course of azithromycin to prevent antibiotic resistance and ensure complete eradication of the infection."
+];
+
+const WORDS = [
+  { word: "Stethoscope",    ipa: "ˈstɛθəskəʊp",         phonemes: ["S","T","EH","TH","AH","S","K","OW","P"],                                          hint: "A medical instrument used to listen to heart and lung sounds." },
+  { word: "Anesthesia",     ipa: "ˌænɪsˈθiːʒə",          phonemes: ["AE","N","AH","S","TH","IY","ZH","AH"],                                           hint: "Temporary loss of sensation induced before surgery." },
+  { word: "Cardiovascular", ipa: "ˌkɑːrdioʊˈvæskjʊlər", phonemes: ["K","AA","R","D","IY","OW","V","AE","S","K","Y","UH","L","ER"],               hint: "Relating to the heart and blood vessels." }
+];
+
+const QA = [
+  {
+    question: "Tell me about yourself.",
+    reference_answer: "I am a dedicated professional with experience in my field. I have strong communication and problem solving skills.",
+    keywords: ["professional", "experience", "communication", "skills", "learning", "team"]
+  },
+  {
+    question: "What are your greatest strengths?",
+    reference_answer: "My greatest strengths are my ability to work well under pressure, strong analytical thinking, effective communication, and dedication to quality work.",
+    keywords: ["strengths", "pressure", "analytical", "communication", "quality", "dedicated"]
+  }
+];
+
+// ─── Interview structure ──────────────────────────────────────────────────────
+// Each step: { round, index, duration (seconds), type: 'script'|'word'|'qa' }
+const steps = [
+  { round: 1, index: 0, duration: 60,  type: "script" },
+  { round: 1, index: 1, duration: 60,  type: "script" },
+  { round: 2, index: 0, duration: 20,  type: "word"   },
+  { round: 2, index: 1, duration: 20,  type: "word"   },
+  { round: 2, index: 2, duration: 20,  type: "word"   },
+  { round: 3, index: 0, duration: 60,  type: "qa"     },
+  { round: 3, index: 1, duration: 60,  type: "qa"     },
+];
+
+const ROUND_LABELS = {
+  1: "Round 1 — Reading (2 min · 2 questions · 1 min each)",
+  2: "Round 2 — Pronunciation (1 min · 3 words · 20 sec each)",
+  3: "Round 3 — Q&A (2 min · 2 questions · 1 min each)"
+};
+const ENDPOINTS = { script: "/evaluate", word: "/evaluate_round2", qa: "/evaluate_round3" };
+const SCORE_KEYS = { script: "round1_score", word: "round2_score", qa: "round3_score" };
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let currentStep = 0;
+let mediaRecorder, audioChunks = [];
+let timerInterval = null;
+let timeLeft = 0;
+let submitted = false;
+const scores = [];
+
+// ─── DOM refs ─────────────────────────────────────────────────────────────────
+const $title    = document.getElementById("round-title");
+const $label    = document.getElementById("round-label");
+const $progress = document.getElementById("progress");
+const $bar      = document.getElementById("timer-bar");
+const $timerTxt = document.getElementById("timer-text");
+const $qbox     = document.getElementById("question-box");
+const $hint     = document.getElementById("hint-box");
+const $recBtn   = document.getElementById("record-btn");
+const $stopBtn  = document.getElementById("stop-btn");
+const $nextBtn  = document.getElementById("next-btn");
+const $status   = document.getElementById("status");
+const $error    = document.getElementById("error-msg");
+const $replay   = document.getElementById("replay-box");
+const $player   = document.getElementById("replay-player");
+const $results  = document.getElementById("results");
+const $summary  = document.getElementById("summary");
+const $timeout  = document.getElementById("timeout-msg");
+
+// ─── Init step ────────────────────────────────────────────────────────────────
+function loadStep(i) {
+  submitted = false;
+  const step = steps[i];
+
+  // Title & label
+  $title.textContent = `Round ${step.round} — ${step.type === "script" ? "Reading" : step.type === "word" ? "Pronunciation" : "Q&A"} (Q${step.index + 1})`;
+  $label.textContent = ROUND_LABELS[step.round];
+
+  // Progress dots
+  $progress.innerHTML = "";
+  steps.forEach((s, idx) => {
+    const d = document.createElement("div");
+    d.className = "dot" + (idx < i ? " done" : idx === i ? " active" : "");
+    d.title = `Round ${s.round} Q${s.index + 1}`;
+    $progress.appendChild(d);
+  });
+
+  // Question content
+  if (step.type === "script") {
+    $qbox.textContent = SCRIPTS[step.index];
+    $hint.style.display = "none";
+    $bar.style.borderLeftColor = "#4a90e2";
+  } else if (step.type === "word") {
+    const w = WORDS[step.index];
+    $qbox.innerHTML = `<strong style="font-size:1.5em;">${w.word}</strong><br><span style="color:#888;font-size:0.9em;">IPA: ${w.ipa}</span>`;
+    $hint.textContent = "💡 " + w.hint;
+    $hint.style.display = "block";
+  } else {
+    $qbox.textContent = "❓ " + QA[step.index].question;
+    $hint.style.display = "none";
+  }
+
+  // Reset UI
+  $recBtn.style.display = "inline-block";
+  $stopBtn.style.display = "none";
+  $nextBtn.style.display = "none";
+  $status.textContent = "";
+  $error.textContent = "";
+  $replay.style.display = "none";
+  $results.style.display = "none";
+  $timeout.style.display = "none";
+
+  // Timer
+  timeLeft = step.duration;
+  updateTimerDisplay();
+  clearInterval(timerInterval);
+}
+
+function updateTimerDisplay() {
+  const step = steps[currentStep];
+  const pct = (timeLeft / step.duration) * 100;
+  $bar.style.width = pct + "%";
+  $bar.style.background = timeLeft <= 10 ? "#e24a4a" : timeLeft <= 20 ? "#f39c12" : "#4a90e2";
+  $timerTxt.textContent = `⏱ ${timeLeft}s remaining`;
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      if (!submitted) autoStop();
+    }
+  }, 1000);
+}
+
+function autoStop() {
+  $timeout.style.display = "block";
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    submitted = true;
+    $stopBtn.style.display = "none";
+    $recBtn.style.display = "none";
+    $status.textContent = "Processing...";
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  } else {
+    // never started recording — just move to next
+    $recBtn.style.display = "none";
+    $nextBtn.style.display = "inline-block";
+  }
+}
+
+// ─── Recording ────────────────────────────────────────────────────────────────
+$recBtn.onclick = async () => {
+  audioChunks = [];
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+
+    mediaRecorder.onstop = () => handleRecordingStop();
+
+    mediaRecorder.start(250);
+    $recBtn.style.display = "none";
+    $stopBtn.style.display = "inline-block";
+    $status.textContent = "Recording... speak now.";
+    $error.textContent = "";
+    $results.style.display = "none";
+    startTimer();
+  } catch (e) {
+    $error.textContent = "Microphone access denied: " + e.message;
+  }
+};
+
+$stopBtn.onclick = () => {
+  clearInterval(timerInterval);
+  submitted = true;
+  $stopBtn.style.display = "none";
+  $recBtn.style.display = "inline-block";
+  $status.textContent = "Processing...";
+  mediaRecorder.stop();
+  mediaRecorder.stream.getTracks().forEach(t => t.stop());
+};
+
+async function handleRecordingStop() {
+  const blob = new Blob(audioChunks, { type: "audio/webm" });
+  const prevURL = $player.src;
+  if (prevURL) URL.revokeObjectURL(prevURL);
+  $player.src = URL.createObjectURL(blob);
+  $replay.style.display = "block";
+
+  const step = steps[currentStep];
+  const formData = new FormData();
+  formData.append("audio", blob, "recording.webm");
+  if (step.type === "script") formData.append("reference", SCRIPTS[step.index]);
+  if (step.type === "word")   formData.append("word_entry", JSON.stringify(WORDS[step.index]));
+  if (step.type === "qa")     formData.append("qa_entry", JSON.stringify(QA[step.index]));
+
+  try {
+    const res  = await fetch(ENDPOINTS[step.type], { method: "POST", body: formData });
+    const data = await res.json();
+
+    if (data.error) {
+      $error.textContent = "Error: " + data.error;
+      $status.textContent = "";
+      $nextBtn.style.display = "inline-block"; // allow skip on error
+      return;
+    }
+
+    scores.push({ round: step.round, type: step.type, score: data[SCORE_KEYS[step.type]] || 0 });
+    renderResults(step.type, data);
+    $status.textContent = "Done.";
+    $nextBtn.style.display = "inline-block";
+  } catch (err) {
+    $error.textContent = "Request failed: " + err.message;
+    $status.textContent = "";
+    $nextBtn.style.display = "inline-block";
+  }
+}
+
+// ─── Render results per type ──────────────────────────────────────────────────
+function renderResults(type, data) {
+  $results.style.display = "block";
+  if (type === "script") renderR1(data);
+  else if (type === "word") renderR2(data);
+  else renderR3(data);
+}
+
+function row(label, value) {
+  return `<div class="result-row"><span class="label">${label}</span><span class="value">${value}</span></div>`;
+}
+
+function renderR1(d) {
+  $results.innerHTML = `
+    <h3>Round 1 Results</h3>
+    <div class="score-big r1-color">${d.round1_score}</div>
+    <div style="text-align:center;color:#888;margin-bottom:12px;">Score (out of 100)</div>
+    ${row("Accuracy", d.accuracy_percent + "%")}
+    ${row("WER", (d.wer * 100).toFixed(1) + "%")}
+    ${row("Fluency", d.fluency_score)}
+    ${row("WPM", d.fluency?.approx_wpm ?? "—")}
+    ${row("Pauses", d.fluency?.pause_count ?? "—")}
+    ${row("Duration", (d.fluency?.duration_sec ?? "—") + "s")}
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label">Misread Words</span>
+      <span style="color:#e24a4a;font-size:0.9em;">${d.misread_words?.length ? d.misread_words.join(", ") : "None ✓"}</span>
+    </div>
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label">Your Transcript</span>
+      <div class="text-box">${d.transcript || "(no speech detected)"}</div>
+    </div>`;
+}
+
+function renderR2(d) {
+  const refPhonemes = (d.reference_phonemes || []).map(ph =>
+    `<span class="ph ${(d.wrong_phonemes||[]).includes(ph) ? "ph-wrong" : "ph-correct"}">${ph}</span>`).join("");
+  const refSet = new Set(d.reference_phonemes || []);
+  const userPhonemes = (d.candidate_phonemes || []).map(ph =>
+    `<span class="ph ${refSet.has(ph) ? "ph-correct" : "ph-extra"}">${ph}</span>`).join("") || "<span style='color:#888;font-size:0.9em;'>(none detected)</span>";
+
+  $results.innerHTML = `
+    <h3>Round 2 Results</h3>
+    <div class="score-big r2-color">${d.round2_score}</div>
+    <div style="text-align:center;color:#888;margin-bottom:12px;">Score (out of 100)</div>
+    ${row("Phoneme Accuracy", d.phoneme_accuracy + "%")}
+    ${row("Word Recognized", d.word_match ? "✓ Yes" : "✗ No")}
+    ${row("MFCC Score", d.mfcc_score)}
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label">Your Transcript</span>
+      <div class="text-box">${d.transcript || "(no speech detected)"}</div>
+    </div>
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label" style="margin-bottom:6px;">Phoneme Breakdown</span>
+      <div style="font-size:0.82em;color:#888;margin-bottom:4px;">Reference</div>
+      <div style="margin-bottom:8px;">${refPhonemes}</div>
+      <div style="font-size:0.82em;color:#888;margin-bottom:4px;">Yours</div>
+      <div>${userPhonemes}</div>
+    </div>`;
+}
+
+function renderR3(d) {
+  const matchedSet = new Set(d.matched_keywords || []);
+  const allKw = [...(d.matched_keywords || []), ...(d.missing_keywords || [])];
+  const kwHtml = allKw.map(kw =>
+    `<span class="kw ${matchedSet.has(kw) ? "kw-matched" : "kw-missing"}">${kw}</span>`).join("");
+
+  const verdictClass = d.verdict === "correct" ? "verdict-correct" : d.verdict === "partially correct" ? "verdict-partial" : "verdict-incorrect";
+
+  $results.innerHTML = `
+    <h3>Round 3 Results</h3>
+    <div class="score-big r3-color">${d.round3_score}</div>
+    <div class="verdict-box ${verdictClass}">${(d.verdict || "").toUpperCase()}</div>
+    ${row("TF-IDF Similarity", d.tfidf_score)}
+    ${row("Fuzzy Match", d.fuzzy_score)}
+    ${row("Keyword Score", d.keyword_score + "%")}
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label" style="margin-bottom:4px;">Keywords</span>
+      <div>${kwHtml}</div>
+    </div>
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label">Your Answer</span>
+      <div class="text-box">${d.transcript || "(no speech detected)"}</div>
+    </div>
+    <div class="result-row" style="flex-direction:column;">
+      <span class="label">Reference Answer</span>
+      <div class="text-box">${d.reference_answer}</div>
+    </div>`;
+}
+
+// ─── Next button ──────────────────────────────────────────────────────────────
+$nextBtn.onclick = () => {
+  currentStep++;
+  if (currentStep >= steps.length) {
+    showSummary();
+  } else {
+    loadStep(currentStep);
+  }
+};
+
+function showSummary() {
+  document.getElementById("round-title").style.display = "none";
+  $label.style.display = "none";
+  $progress.style.display = "none";
+  document.getElementById("timer-bar-wrap").style.display = "none";
+  $timerTxt.style.display = "none";
+  $qbox.style.display = "none";
+  $hint.style.display = "none";
+  $recBtn.style.display = "none";
+  $stopBtn.style.display = "none";
+  $nextBtn.style.display = "none";
+  $status.style.display = "none";
+  $replay.style.display = "none";
+  $results.style.display = "none";
+  $timeout.style.display = "none";
+
+  const byRound = { 1: [], 2: [], 3: [] };
+  scores.forEach(s => byRound[s.round].push(s.score));
+  const avg = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : "—";
+  const allScores = scores.map(s => s.score);
+  const overall = avg(allScores);
+
+  $summary.style.display = "block";
+  $summary.innerHTML = `
+    <h2>🎉 Interview Complete!</h2>
+    <div class="summary-score">${overall}</div>
+    <div style="color:#888;margin-bottom:20px;">Overall Score (out of 100)</div>
+    <table style="width:100%;border-collapse:collapse;text-align:left;">
+      <tr style="border-bottom:2px solid #eee;">
+        <th style="padding:8px;">Round</th><th style="padding:8px;">Avg Score</th>
+      </tr>
+      <tr><td style="padding:8px;">Round 1 — Reading</td><td style="padding:8px;font-weight:bold;color:#4a90e2;">${avg(byRound[1])}</td></tr>
+      <tr><td style="padding:8px;">Round 2 — Pronunciation</td><td style="padding:8px;font-weight:bold;color:#9b59b6;">${avg(byRound[2])}</td></tr>
+      <tr><td style="padding:8px;">Round 3 — Q&A</td><td style="padding:8px;font-weight:bold;color:#27ae60;">${avg(byRound[3])}</td></tr>
+    </table>
+    <br>
+    <button class="btn" style="background:#4a90e2;color:#fff;" onclick="location.reload()">🔄 Restart Interview</button>
+  `;
+}
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+loadStep(0);
+</script>
+</body>
+</html>

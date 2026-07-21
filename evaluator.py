@@ -17,6 +17,7 @@ from rapidfuzz import fuzz
 
 # Load models once at module level
 _VOSK_MODEL  = Model(model_path="models/vosk-model-small-en-us-0.15")
+# _VOSK_MODEL  = Model(model_path="models/vosk-model-en-us-0.22")
 _G2P         = G2p()
 _LEMMATIZER  = WordNetLemmatizer()
 _STOPWORDS   = set(stopwords.words("english"))
@@ -97,7 +98,7 @@ def _normalize(text: str) -> str:
 def compute_wer(reference: str, hypothesis: str) -> float:
     if not hypothesis:
         return 1.0
-    return compute_jiwer_wer(_normalize(reference), _normalize(hypothesis))
+    return min(1.0, compute_jiwer_wer(_normalize(reference), _normalize(hypothesis)))
 
 
 def get_misread_words(reference: str, hypothesis: str) -> list:
@@ -414,7 +415,7 @@ def evaluate_round1(webm_bytes: bytes, reference_script: str) -> dict:
 
     transcript    = transcribe_audio(wav_bytes)
     error_rate    = compute_wer(reference_script, transcript)
-    accuracy      = round((1 - error_rate) * 100, 2)
+    accuracy      = round(max(0.0, (1 - error_rate) * 100), 2)
     misread       = get_misread_words(reference_script, transcript)
     fluency       = compute_fluency(wav_bytes)
     fluency_score = compute_fluency_score(fluency)

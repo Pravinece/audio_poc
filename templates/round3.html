@@ -17,6 +17,8 @@
     #stop-btn  { background: #e24a4a; color: #fff; display: none; }
     #status    { margin-top: 12px; font-size: 0.95em; color: #666; }
     #error-msg { color: #e24a4a; margin-top: 12px; }
+    #replay-box { display: none; margin-top: 14px; }
+    #replay-box label { font-size: 0.9em; color: #555; display: block; margin-bottom: 4px; }
 
     #results { display: none; background: #fff; border-radius: 6px; padding: 24px; margin-top: 28px; }
     #results h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 8px; }
@@ -55,6 +57,10 @@
   <button class="btn" id="stop-btn">⏹ Stop & Evaluate</button>
   <div id="status"></div>
   <div id="error-msg"></div>
+  <div id="replay-box">
+    <label>🔊 Replay your recording:</label>
+    <audio id="replay-player" controls style="width:100%;"></audio>
+  </div>
 
   <div id="results">
     <h3>Evaluation Results</h3>
@@ -126,6 +132,13 @@
 
     mediaRecorder.onstop = async () => {
       const blob = new Blob(audioChunks, { type: "audio/webm" });
+
+      // Replay in-memory — no file saved
+      const prevURL = document.getElementById("replay-player").src;
+      if (prevURL) URL.revokeObjectURL(prevURL);
+      document.getElementById("replay-player").src = URL.createObjectURL(blob);
+      document.getElementById("replay-box").style.display = "block";
+
       const formData = new FormData();
       formData.append("audio", blob, "recording.webm");
 

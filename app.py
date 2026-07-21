@@ -1,3 +1,4 @@
+import json
 import random
 import numpy as np
 from flask import Flask, render_template, request, jsonify, session
@@ -40,7 +41,7 @@ def evaluate():
         return jsonify({"error": "No audio file received"}), 400
 
     audio_bytes = request.files["audio"].read()
-    reference = session.get("current_script", "")
+    reference = request.form.get("reference") or session.get("current_script", "")
 
     if not reference:
         return jsonify({"error": "No reference script in session"}), 400
@@ -69,7 +70,8 @@ def evaluate_r2():
         return jsonify({"error": "No audio file received"}), 400
 
     audio_bytes = request.files["audio"].read()
-    word_entry = session.get("current_word")
+    word_entry_raw = request.form.get("word_entry")
+    word_entry = json.loads(word_entry_raw) if word_entry_raw else session.get("current_word")
 
     if not word_entry:
         return jsonify({"error": "No word in session"}), 400
@@ -98,7 +100,8 @@ def evaluate_r3():
         return jsonify({"error": "No audio file received"}), 400
 
     audio_bytes = request.files["audio"].read()
-    qa_entry    = session.get("current_qa")
+    qa_entry_raw = request.form.get("qa_entry")
+    qa_entry = json.loads(qa_entry_raw) if qa_entry_raw else session.get("current_qa")
 
     if not qa_entry:
         return jsonify({"error": "No question in session"}), 400
@@ -109,6 +112,10 @@ def evaluate_r3():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route("/interview")
+def interview():
+    return render_template("interview.html")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
