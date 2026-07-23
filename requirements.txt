@@ -1,5 +1,7 @@
 flask
-vosk
+funasr
+torch
+torchaudio
 librosa
 jiwer
 numpy

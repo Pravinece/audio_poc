@@ -1,62 +1,17 @@
 QA_BANK = [
     {
-        "question": "Tell me about yourself.",
-        "reference_answer": "I am a dedicated professional with experience in my field. I have strong communication and problem solving skills. I am passionate about continuous learning and contributing to team success.",
-        "keywords": ["professional", "experience", "communication", "skills", "learning", "team"]
+        "question": "Name the top 3 pharmaceutical companies in India and what makes them leaders.",
+        "reference_answer": "The top three pharmaceutical companies in India are Sun Pharmaceutical Industries, Cipla, and Dr Reddy's Laboratories. Sun Pharma is the largest with a strong global presence and a wide range of specialty and generic medicines. Cipla is known for its affordable life saving drugs especially in respiratory and HIV treatment. Dr Reddy's is recognized for its strong research capabilities and international generic drug exports.",
+        "keywords": ["Sun Pharma", "Cipla", "Dr Reddy's", "generic", "specialty", "research", "exports", "affordable"]
     },
     {
-        "question": "What are your greatest strengths?",
-        "reference_answer": "My greatest strengths are my ability to work well under pressure, strong analytical thinking, effective communication, and my dedication to delivering quality work on time.",
-        "keywords": ["strengths", "pressure", "analytical", "communication", "quality", "dedicated"]
+        "question": "What are the top 3 most prescribed drugs in India and what are they used for?",
+        "reference_answer": "The top three most prescribed drugs in India are Metformin, Atorvastatin, and Amlodipine. Metformin is the first line treatment for type 2 diabetes as it reduces blood glucose levels. Atorvastatin is a statin prescribed to lower cholesterol and reduce the risk of cardiovascular disease. Amlodipine is a calcium channel blocker used to treat hypertension and angina by relaxing blood vessels and improving blood flow.",
+        "keywords": ["Metformin", "Atorvastatin", "Amlodipine", "diabetes", "cholesterol", "hypertension", "cardiovascular", "blood glucose"]
     },
     {
-        "question": "How do you handle conflict in a team?",
-        "reference_answer": "I handle conflict by listening to all parties involved, understanding different perspectives, and finding a common ground solution. I believe open communication and mutual respect are key to resolving disagreements.",
-        "keywords": ["conflict", "listening", "perspectives", "communication", "respect", "solution"]
-    },
-    {
-        "question": "Why do you want to work in the healthcare industry?",
-        "reference_answer": "I want to work in healthcare because I am passionate about helping people and making a positive impact on patient lives. The field challenges me to grow professionally while contributing to society.",
-        "keywords": ["healthcare", "passionate", "helping", "patient", "impact", "grow"]
-    },
-    {
-        "question": "Describe a situation where you worked under pressure.",
-        "reference_answer": "In my previous role I managed multiple deadlines simultaneously during a critical project. I prioritized tasks, communicated clearly with my team, and delivered results on time without compromising quality.",
-        "keywords": ["pressure", "deadlines", "prioritized", "team", "results", "quality"]
-    },
-    {
-        "question": "What do you know about patient confidentiality?",
-        "reference_answer": "Patient confidentiality means protecting a patient's personal and medical information from unauthorized disclosure. It is a fundamental ethical and legal obligation in healthcare governed by regulations like HIPAA.",
-        "keywords": ["confidentiality", "patient", "medical", "information", "ethical", "legal", "HIPAA"]
-    },
-    {
-        "question": "How do you prioritize tasks when everything is urgent?",
-        "reference_answer": "I assess each task based on its impact and deadline, communicate with stakeholders to align priorities, and focus on high impact items first while delegating where possible to ensure everything is completed efficiently.",
-        "keywords": ["prioritize", "impact", "deadline", "communicate", "stakeholders", "delegate", "efficiently"]
-    },
-    {
-        "question": "What is your experience with electronic health records?",
-        "reference_answer": "I have experience working with electronic health record systems to document patient information, track medical history, and coordinate care. I understand the importance of accurate and timely data entry.",
-        "keywords": ["electronic", "health", "records", "patient", "document", "medical", "history", "accurate"]
-    },
-    {
-        "question": "How do you ensure accuracy in your work?",
-        "reference_answer": "I ensure accuracy by double checking my work, following established protocols, maintaining organized records, and seeking clarification when instructions are unclear. I also welcome feedback to continuously improve.",
-        "keywords": ["accuracy", "double checking", "protocols", "organized", "feedback", "improve"]
-    },
-    {
-        "question": "Where do you see yourself in five years?",
-        "reference_answer": "In five years I see myself in a senior role where I can lead projects and mentor junior team members. I aim to deepen my expertise and contribute meaningfully to the organization's goals.",
-        "keywords": ["senior", "lead", "mentor", "expertise", "contribute", "goals"]
-    },
-    {
-        "question": "How do you stay updated with medical advancements?",
-        "reference_answer": "I stay updated by reading medical journals, attending conferences and workshops, participating in online courses, and being part of professional networks that share the latest research and clinical guidelines.",
-        "keywords": ["journals", "conferences", "workshops", "courses", "research", "clinical", "guidelines"]
-    },
-    {
-        "question": "Describe your experience working in a multidisciplinary team.",
-        "reference_answer": "I have worked in teams comprising doctors, nurses, pharmacists, and administrative staff. I contributed by communicating clearly, respecting each member's expertise, and collaborating toward shared patient care goals.",
-        "keywords": ["multidisciplinary", "doctors", "nurses", "communicating", "collaborating", "patient", "care"]
+        "question": "Tell us about FDC Limited — its vision, mission, and best known products.",
+        "reference_answer": "FDC Limited is a leading Indian pharmaceutical company founded in 1940 and headquartered in Mumbai. Its vision is to be a globally respected healthcare company committed to improving quality of life. Its mission is to deliver innovative and affordable healthcare solutions through research, quality manufacturing, and ethical practices. FDC's best known products include Electral, the oral rehydration salt used for dehydration, Zifi, a cephalosporin antibiotic, and Enerzal, an energy and electrolyte drink widely used by athletes and patients.",
+        "keywords": ["FDC", "Electral", "Zifi", "Enerzal", "vision", "mission", "rehydration", "antibiotic", "affordable", "Mumbai"]
     },
 ]

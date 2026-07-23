@@ -3,40 +3,157 @@
 <head>
   <meta charset="UTF-8" />
   <title>5-Minute Interview</title>
+  <link rel="stylesheet" href="/static/mic_button.css" />
   <style>
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; background: #f5f5f5; }
-    h2 { color: #333; margin-bottom: 4px; }
-    .round-label { font-size: 0.85em; color: #888; margin-bottom: 16px; }
+    h2 { color: #333; margin-bottom: 4px; text-align: center; font-size: 1.6em; letter-spacing: 0.02em; }
+    .round-label { font-size: 0.85em; color: #888; margin-bottom: 20px; text-align: center; letter-spacing: 0.03em; }
 
     /* Timer */
-    #timer-bar-wrap { background: #e0e0e0; border-radius: 6px; height: 10px; margin-bottom: 6px; }
-    #timer-bar { height: 10px; border-radius: 6px; background: #4a90e2; transition: width 1s linear, background 0.5s; width: 100%; }
-    #timer-text { font-size: 1.1em; font-weight: bold; color: #333; margin-bottom: 18px; }
+    .timer-wrap {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .timer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .timer-header .timer-title {
+      font-size: 0.78em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #aaa;
+    }
+    #timer-text {
+      font-size: 1.05em;
+      font-weight: 700;
+      color: #333;
+      font-variant-numeric: tabular-nums;
+    }
+    #timer-bar-wrap {
+      background: #eee;
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+    }
+    #timer-bar {
+      height: 8px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4a90e2, #1afbf0);
+      transition: width 1s linear, background 0.5s;
+      width: 100%;
+    }
 
     /* Question box */
+    .question-wrap { position: relative; margin-bottom: 8px; }
     #question-box {
       background: #fff; border-left: 4px solid #4a90e2;
       padding: 16px 20px; font-size: 1.1em; border-radius: 4px;
-      margin-bottom: 8px; color: #222; line-height: 1.6;
+      color: #222; line-height: 1.6;
     }
     #hint-box { background: #eef4ff; border-radius: 4px; padding: 8px 14px; font-size: 0.9em; color: #555; margin-bottom: 20px; }
 
     /* Buttons */
-    .btn { padding: 10px 22px; font-size: 1em; border: none; border-radius: 4px; cursor: pointer; margin-right: 8px; }
-    #record-btn { background: #4a90e2; color: #fff; }
-    #stop-btn   { background: #e24a4a; color: #fff; display: none; }
-    #next-btn   { background: #27ae60; color: #fff; display: none; }
+    .btn { padding: 10px 22px; font-size: 1em; border: none; border-radius: 4px; cursor: pointer; }
+    #next-btn {
+      display: none;
+      background: linear-gradient(135deg, #27ae60, #1abc9c);
+      color: #fff;
+      float: right;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(39,174,96,0.3);
+    }
+    .action-row { overflow: hidden; margin-top: 10px; }
 
-    #status    { margin-top: 10px; font-size: 0.9em; color: #666; }
-    #error-msg { color: #e24a4a; margin-top: 8px; font-size: 0.9em; }
+    #error-msg { color: #e24a4a; margin-top: 8px; font-size: 0.9em; text-align: center; }
 
-    /* Replay */
-    #replay-box { display: none; margin-top: 12px; }
-    #replay-box label { font-size: 0.85em; color: #555; display: block; margin-bottom: 4px; }
+    /* Replay button */
+    #replay-btn {
+      display: none;
+      position: absolute;
+      top: 0; right: 0;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #1afbf0, #da00ff);
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(218,0,255,0.3);
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+    #replay-btn:hover { transform: scale(1.1); }
+    #replay-btn svg { width: 20px; height: 20px; fill: white; }
+
+    /* Replay modal */
+    #replay-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    #replay-modal.open { display: flex; }
+    .replay-modal-box {
+      background: #1a1a2e;
+      border-radius: 16px;
+      padding: 28px 32px;
+      width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .replay-modal-title {
+      color: #fff;
+      font-size: 1em;
+      font-weight: 600;
+      margin-bottom: 20px;
+      letter-spacing: 0.04em;
+      text-align: center;
+    }
+    #replay-player {
+      width: 100%;
+      border-radius: 8px;
+      outline: none;
+      accent-color: #1afbf0;
+    }
+    .replay-close {
+      position: absolute;
+      top: 12px; right: 14px;
+      background: none;
+      border: none;
+      color: #aaa;
+      font-size: 1.3em;
+      cursor: pointer;
+      line-height: 1;
+    }
+    .replay-close:hover { color: #fff; }
 
     /* Results */
-    #results { display: none; background: #fff; border-radius: 6px; padding: 20px; margin-top: 20px; }
+    #results {
+      display: none;
+      background: #fff;
+      border-radius: 6px;
+      padding: 20px;
+      margin-top: 20px;
+      max-height: 340px;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+    }
+    #results::-webkit-scrollbar { width: 6px; }
+    #results::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 999px; }
+    #results::-webkit-scrollbar-thumb { background: #ccc; border-radius: 999px; }
+    #results::-webkit-scrollbar-thumb:hover { background: #aaa; }
     #results h3 { margin-top: 0; border-bottom: 1px solid #eee; padding-bottom: 8px; color: #333; }
     .result-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f0f0f0; font-size: 0.93em; }
     .result-row:last-child { border-bottom: none; }
@@ -59,11 +176,7 @@
     .verdict-partial   { background: #fff3cd; color: #856404; }
     .verdict-incorrect { background: #f8d7da; color: #721c24; }
 
-    /* Progress dots */
-    #progress { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-    .dot { width: 14px; height: 14px; border-radius: 50%; background: #ddd; border: 2px solid #bbb; }
-    .dot.done { background: #27ae60; border-color: #27ae60; }
-    .dot.active { background: #4a90e2; border-color: #4a90e2; }
+
 
     /* Final summary */
     #summary { display: none; background: #fff; border-radius: 8px; padding: 28px; margin-top: 24px; text-align: center; }
@@ -79,25 +192,44 @@
 <h2 id="round-title">Interview</h2>
 <div class="round-label" id="round-label"></div>
 
-<div id="progress"></div>
+<div class="timer-wrap">
+  <div class="timer-header">
+    <span class="timer-title">&#9201; Time Remaining</span>
+    <span id="timer-text"></span>
+  </div>
+  <div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+</div>
 
-<div id="timer-bar-wrap"><div id="timer-bar"></div></div>
-<div id="timer-text"></div>
-
-<div id="question-box"></div>
+<div class="question-wrap">
+  <div id="question-box"></div>
+  <button id="replay-btn" title="Replay recording">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z"/><path d="M15 3l-3 3 3 3V3z"/><path d="M10 8l6 4-6 4V8z"/></svg>
+  </button>
+</div>
 <div id="hint-box" style="display:none;"></div>
 
-<button class="btn" id="record-btn">🎙 Start Recording</button>
-<button class="btn" id="stop-btn">⏹ Stop & Submit</button>
-<button class="btn" id="next-btn">Next ➜</button>
+<div class="mic-wrapper">
+  <div class="mic-shell">
+    <button class="mic-box idle" id="mic-btn" title="Start Recording">
+      <svg fill="#000000" width="800px" height="800px" viewBox="-3 0 19 19" xmlns="http://www.w3.org/2000/svg" class="cf-icon-svg"><path d="M11.665 7.915v1.31a5.257 5.257 0 0 1-1.514 3.694 5.174 5.174 0 0 1-1.641 1.126 5.04 5.04 0 0 1-1.456.384v1.899h2.312a.554.554 0 0 1 0 1.108H3.634a.554.554 0 0 1 0-1.108h2.312v-1.899a5.045 5.045 0 0 1-1.456-.384 5.174 5.174 0 0 1-1.641-1.126 5.257 5.257 0 0 1-1.514-3.695v-1.31a.554.554 0 1 1 1.109 0v1.31a4.131 4.131 0 0 0 1.195 2.917 3.989 3.989 0 0 0 5.722 0 4.133 4.133 0 0 0 1.195-2.917v-1.31a.554.554 0 1 1 1.109 0zM3.77 10.37a2.875 2.875 0 0 1-.233-1.146V4.738A2.905 2.905 0 0 1 3.77 3.58a3 3 0 0 1 1.59-1.59 2.902 2.902 0 0 1 1.158-.233 2.865 2.865 0 0 1 1.152.233 2.977 2.977 0 0 1 1.793 2.748l-.012 4.487a2.958 2.958 0 0 1-.856 2.09 3.025 3.025 0 0 1-.937.634 2.865 2.865 0 0 1-1.152.233 2.905 2.905 0 0 1-1.158-.233A2.957 2.957 0 0 1 3.77 10.37z"/></svg>
+    </button>
+  </div>
+  <div class="mic-label" id="mic-label">Tap to start</div>
+</div>
 
-<div id="timeout-msg">⏰ Time's up! Recording stopped automatically.</div>
-<div id="status"></div>
-<div id="error-msg"></div>
+<div class="action-row">
+  <div id="timeout-msg" style="display:none;">⏰ Time's up!</div>
+  <div id="error-msg"></div>
+  <button class="btn" id="next-btn">Next ➜</button>
+</div>
 
-<div id="replay-box">
-  <label>🔊 Replay:</label>
-  <audio id="replay-player" controls style="width:100%;"></audio>
+<!-- Replay Modal -->
+<div id="replay-modal">
+  <div class="replay-modal-box">
+    <button class="replay-close" id="replay-close">&#x2715;</button>
+    <div class="replay-modal-title">🔊 Your Recording</div>
+    <audio id="replay-player" controls></audio>
+  </div>
 </div>
 
 <div id="results"></div>
@@ -118,14 +250,19 @@ const WORDS = [
 
 const QA = [
   {
-    question: "Tell me about yourself.",
-    reference_answer: "I am a dedicated professional with experience in my field. I have strong communication and problem solving skills.",
-    keywords: ["professional", "experience", "communication", "skills", "learning", "team"]
+    question: "Name the top 3 pharmaceutical companies in India and what makes them leaders.",
+    reference_answer: "The top three pharmaceutical companies in India are Sun Pharmaceutical Industries, Cipla, and Dr Reddy's Laboratories. Sun Pharma is the largest with a strong global presence and a wide range of specialty and generic medicines. Cipla is known for its affordable life saving drugs especially in respiratory and HIV treatment. Dr Reddy's is recognized for its strong research capabilities and international generic drug exports.",
+    keywords: ["Sun Pharma", "Cipla", "Dr Reddy's", "generic", "specialty", "research", "exports", "affordable"]
   },
   {
-    question: "What are your greatest strengths?",
-    reference_answer: "My greatest strengths are my ability to work well under pressure, strong analytical thinking, effective communication, and dedication to quality work.",
-    keywords: ["strengths", "pressure", "analytical", "communication", "quality", "dedicated"]
+    question: "What are the top 3 most prescribed drugs in India and what are they used for?",
+    reference_answer: "The top three most prescribed drugs in India are Metformin, Atorvastatin, and Amlodipine. Metformin is the first line treatment for type 2 diabetes as it reduces blood glucose levels. Atorvastatin is a statin prescribed to lower cholesterol and reduce the risk of cardiovascular disease. Amlodipine is a calcium channel blocker used to treat hypertension and angina by relaxing blood vessels and improving blood flow.",
+    keywords: ["Metformin", "Atorvastatin", "Amlodipine", "diabetes", "cholesterol", "hypertension", "cardiovascular", "blood glucose"]
+  },
+  {
+    question: "Tell us about FDC Limited — its vision, mission, and best known products.",
+    reference_answer: "FDC Limited is a leading Indian pharmaceutical company founded in 1940 and headquartered in Mumbai. Its vision is to be a globally respected healthcare company committed to improving quality of life. Its mission is to deliver innovative and affordable healthcare solutions through research, quality manufacturing, and ethical practices. FDC's best known products include Electral, the oral rehydration salt used for dehydration, Zifi, a cephalosporin antibiotic, and Enerzal, an energy and electrolyte drink widely used by athletes and patients.",
+    keywords: ["FDC", "Electral", "Zifi", "Enerzal", "vision", "mission", "rehydration", "antibiotic", "affordable", "Mumbai"]
   }
 ];
 
@@ -133,18 +270,18 @@ const QA = [
 // Each step: { round, index, duration (seconds), type: 'script'|'word'|'qa' }
 const steps = [
   { round: 1, index: 0, duration: 60,  type: "script" },
-  { round: 1, index: 1, duration: 60,  type: "script" },
   { round: 2, index: 0, duration: 20,  type: "word"   },
   { round: 2, index: 1, duration: 20,  type: "word"   },
   { round: 2, index: 2, duration: 20,  type: "word"   },
   { round: 3, index: 0, duration: 60,  type: "qa"     },
   { round: 3, index: 1, duration: 60,  type: "qa"     },
+  { round: 3, index: 2, duration: 60,  type: "qa"     },
 ];
 
 const ROUND_LABELS = {
-  1: "Round 1 — Reading (2 min · 2 questions · 1 min each)",
+  1: "Round 1 — Reading (1 min · 1 question)",
   2: "Round 2 — Pronunciation (1 min · 3 words · 20 sec each)",
-  3: "Round 3 — Q&A (2 min · 2 questions · 1 min each)"
+  3: "Round 3 — Q&A (3 min · 3 questions · 1 min each)"
 };
 const ENDPOINTS = { script: "/evaluate", word: "/evaluate_round2", qa: "/evaluate_round3" };
 const SCORE_KEYS = { script: "round1_score", word: "round2_score", qa: "round3_score" };
@@ -160,18 +297,18 @@ const scores = [];
 // ─── DOM refs ─────────────────────────────────────────────────────────────────
 const $title    = document.getElementById("round-title");
 const $label    = document.getElementById("round-label");
-const $progress = document.getElementById("progress");
 const $bar      = document.getElementById("timer-bar");
 const $timerTxt = document.getElementById("timer-text");
 const $qbox     = document.getElementById("question-box");
 const $hint     = document.getElementById("hint-box");
-const $recBtn   = document.getElementById("record-btn");
-const $stopBtn  = document.getElementById("stop-btn");
-const $nextBtn  = document.getElementById("next-btn");
-const $status   = document.getElementById("status");
-const $error    = document.getElementById("error-msg");
-const $replay   = document.getElementById("replay-box");
-const $player   = document.getElementById("replay-player");
+const $micBtn   = document.getElementById("mic-btn");
+const $micLabel = document.getElementById("mic-label");
+let isRecording = false;
+const $nextBtn     = document.getElementById("next-btn");
+const $error       = document.getElementById("error-msg");
+const $replayBtn   = document.getElementById("replay-btn");
+const $replayModal = document.getElementById("replay-modal");
+const $player      = document.getElementById("replay-player");
 const $results  = document.getElementById("results");
 const $summary  = document.getElementById("summary");
 const $timeout  = document.getElementById("timeout-msg");
@@ -184,15 +321,6 @@ function loadStep(i) {
   // Title & label
   $title.textContent = `Round ${step.round} — ${step.type === "script" ? "Reading" : step.type === "word" ? "Pronunciation" : "Q&A"} (Q${step.index + 1})`;
   $label.textContent = ROUND_LABELS[step.round];
-
-  // Progress dots
-  $progress.innerHTML = "";
-  steps.forEach((s, idx) => {
-    const d = document.createElement("div");
-    d.className = "dot" + (idx < i ? " done" : idx === i ? " active" : "");
-    d.title = `Round ${s.round} Q${s.index + 1}`;
-    $progress.appendChild(d);
-  });
 
   // Question content
   if (step.type === "script") {
@@ -210,12 +338,13 @@ function loadStep(i) {
   }
 
   // Reset UI
-  $recBtn.style.display = "inline-block";
-  $stopBtn.style.display = "none";
+  $micBtn.className = "mic-box idle";
+  $micLabel.textContent = "Tap to start";
+  isRecording = false;
+  $micBtn.disabled = false;
   $nextBtn.style.display = "none";
-  $status.textContent = "";
+  $replayBtn.style.display = "none";
   $error.textContent = "";
-  $replay.style.display = "none";
   $results.style.display = "none";
   $timeout.style.display = "none";
 
@@ -229,8 +358,8 @@ function updateTimerDisplay() {
   const step = steps[currentStep];
   const pct = (timeLeft / step.duration) * 100;
   $bar.style.width = pct + "%";
-  $bar.style.background = timeLeft <= 10 ? "#e24a4a" : timeLeft <= 20 ? "#f39c12" : "#4a90e2";
-  $timerTxt.textContent = `⏱ ${timeLeft}s remaining`;
+  $bar.style.background = timeLeft <= 10 ? "#e24a4a" : timeLeft <= 20 ? "linear-gradient(90deg,#f39c12,#e2b04a)" : "linear-gradient(90deg,#4a90e2,#1afbf0)";
+  $timerTxt.textContent = `${timeLeft}s`;
 }
 
 function startTimer() {
@@ -249,48 +378,50 @@ function autoStop() {
   $timeout.style.display = "block";
   if (mediaRecorder && mediaRecorder.state !== "inactive") {
     submitted = true;
-    $stopBtn.style.display = "none";
-    $recBtn.style.display = "none";
-    $status.textContent = "Processing...";
+    isRecording = false;
+    $micBtn.className = "mic-box idle";
+    $micBtn.disabled = true;
+    $micLabel.textContent = "Time's up";
     mediaRecorder.stop();
     mediaRecorder.stream.getTracks().forEach(t => t.stop());
   } else {
-    // never started recording — just move to next
-    $recBtn.style.display = "none";
+    $micBtn.disabled = true;
+    $micBtn.className = "mic-box idle";
+    $micLabel.textContent = "Time's up";
     $nextBtn.style.display = "inline-block";
   }
 }
 
 // ─── Recording ────────────────────────────────────────────────────────────────
-$recBtn.onclick = async () => {
-  audioChunks = [];
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-    mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
-
-    mediaRecorder.onstop = () => handleRecordingStop();
-
-    mediaRecorder.start(250);
-    $recBtn.style.display = "none";
-    $stopBtn.style.display = "inline-block";
-    $status.textContent = "Recording... speak now.";
-    $error.textContent = "";
-    $results.style.display = "none";
-    startTimer();
-  } catch (e) {
-    $error.textContent = "Microphone access denied: " + e.message;
+$micBtn.onclick = async () => {
+  if (!isRecording) {
+    // ── START ──
+    audioChunks = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => handleRecordingStop();
+      mediaRecorder.start(250);
+      isRecording = true;
+      $micBtn.className = "mic-box recording";
+      $micLabel.textContent = "Tap to stop";
+      $error.textContent = "";
+      $results.style.display = "none";
+      startTimer();
+    } catch (e) {
+      $error.textContent = "Microphone access denied: " + e.message;
+    }
+  } else {
+    // ── STOP ──
+    clearInterval(timerInterval);
+    submitted = true;
+    isRecording = false;
+    $micBtn.className = "mic-box idle";
+    $micLabel.textContent = "Processing...";
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
   }
-};
-
-$stopBtn.onclick = () => {
-  clearInterval(timerInterval);
-  submitted = true;
-  $stopBtn.style.display = "none";
-  $recBtn.style.display = "inline-block";
-  $status.textContent = "Processing...";
-  mediaRecorder.stop();
-  mediaRecorder.stream.getTracks().forEach(t => t.stop());
 };
 
 async function handleRecordingStop() {
@@ -298,7 +429,7 @@ async function handleRecordingStop() {
   const prevURL = $player.src;
   if (prevURL) URL.revokeObjectURL(prevURL);
   $player.src = URL.createObjectURL(blob);
-  $replay.style.display = "block";
+  $replayBtn.style.display = "flex";
 
   const step = steps[currentStep];
   const formData = new FormData();
@@ -312,22 +443,27 @@ async function handleRecordingStop() {
     const data = await res.json();
 
     if (data.error) {
+      $micLabel.textContent = "Tap to start";
       $error.textContent = "Error: " + data.error;
-      $status.textContent = "";
-      $nextBtn.style.display = "inline-block"; // allow skip on error
+      $nextBtn.style.display = "inline-block";
       return;
     }
 
     scores.push({ round: step.round, type: step.type, score: data[SCORE_KEYS[step.type]] || 0 });
     renderResults(step.type, data);
-    $status.textContent = "Done.";
+    $micLabel.textContent = "Tap to start";
     $nextBtn.style.display = "inline-block";
   } catch (err) {
+    $micLabel.textContent = "Tap to start";
     $error.textContent = "Request failed: " + err.message;
-    $status.textContent = "";
     $nextBtn.style.display = "inline-block";
   }
 }
+
+// ─── Replay modal
+document.getElementById("replay-close").onclick = () => { $replayModal.classList.remove("open"); $player.pause(); };
+$replayModal.onclick = e => { if (e.target === $replayModal) { $replayModal.classList.remove("open"); $player.pause(); } };
+$replayBtn.onclick = () => $replayModal.classList.add("open");
 
 // ─── Render results per type ──────────────────────────────────────────────────
 function renderResults(type, data) {
@@ -335,6 +471,7 @@ function renderResults(type, data) {
   if (type === "script") renderR1(data);
   else if (type === "word") renderR2(data);
   else renderR3(data);
+  $results.scrollTop = 0;
 }
 
 function row(label, value) {
@@ -431,16 +568,12 @@ $nextBtn.onclick = () => {
 function showSummary() {
   document.getElementById("round-title").style.display = "none";
   $label.style.display = "none";
-  $progress.style.display = "none";
-  document.getElementById("timer-bar-wrap").style.display = "none";
-  $timerTxt.style.display = "none";
+  document.querySelector(".timer-wrap").style.display = "none";
   $qbox.style.display = "none";
   $hint.style.display = "none";
-  $recBtn.style.display = "none";
-  $stopBtn.style.display = "none";
+  document.querySelector(".mic-wrapper").style.display = "none";
+  $replayBtn.style.display = "none";
   $nextBtn.style.display = "none";
-  $status.style.display = "none";
-  $replay.style.display = "none";
   $results.style.display = "none";
   $timeout.style.display = "none";
 

@@ -1,13 +1,12 @@
 import io
 import os
 import re
-import json
 import tempfile
 import subprocess
 import numpy as np
 import librosa
 from g2p_en import G2p
-from vosk import Model, KaldiRecognizer
+from funasr import AutoModel
 from jiwer import wer as compute_jiwer_wer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
@@ -16,8 +15,7 @@ from nltk.stem import WordNetLemmatizer
 from rapidfuzz import fuzz
 
 # Load models once at module level
-_VOSK_MODEL  = Model(model_path="models/vosk-model-small-en-us-0.15")
-# _VOSK_MODEL  = Model(model_path="models/vosk-model-en-us-0.22")
+_SENSE_MODEL = AutoModel(model="models/SenseVoiceSmall", disable_update=True)
 _G2P         = G2p()
 _LEMMATIZER  = WordNetLemmatizer()
 _STOPWORDS   = set(stopwords.words("english"))
@@ -65,24 +63,39 @@ def _webm_to_wav_bytes(webm_bytes: bytes) -> bytes:
 
 
 # ---------------------------------------------------------------------------
-# ASR: Vosk transcription
+# ASR: SenseVoice transcription
 # ---------------------------------------------------------------------------
 
 def transcribe_audio(wav_bytes: bytes) -> str:
-    """Transcribe 16kHz mono WAV bytes using Vosk."""
-    recognizer = KaldiRecognizer(_VOSK_MODEL, 16000)
-    recognizer.SetWords(True)
+    """Transcribe 16kHz mono WAV bytes using SenseVoice Small."""
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        tmp.write(wav_bytes)
+        tmp_path = tmp.name
 
-    # Feed raw PCM (skip 44-byte WAV header)
-    raw_pcm = wav_bytes[44:]
+    try:
+        result = _SENSE_MODEL.generate(input=tmp_path, language="en", use_itn=True)
+        text = result[0]["text"] if result else ""
+        # Strip SenseVoice emotion/event tags e.g. <|HAPPY|><|Speech|>
+        text = re.sub(r"<\|[^|]+\|>", "", text)
+        return text.lower().strip()
+    finally:
+        os.unlink(tmp_path)
 
-    # Feed in chunks of 4000 bytes
-    chunk_size = 4000
-    for i in range(0, len(raw_pcm), chunk_size):
-        recognizer.AcceptWaveform(raw_pcm[i:i + chunk_size])
+# def transcribe_audio_vosk(wav_bytes: bytes) -> str:
+#     """Transcribe 16kHz mono WAV bytes using Vosk."""
+#     recognizer = KaldiRecognizer(_VOSK_MODEL, 16000)
+#     recognizer.SetWords(True)
 
-    result = json.loads(recognizer.FinalResult())
-    return result.get("text", "").lower().strip()
+#     # Feed raw PCM (skip 44-byte WAV header)
+#     raw_pcm = wav_bytes[44:]
+
+#     # Feed in chunks of 4000 bytes
+#     chunk_size = 4000
+#     for i in range(0, len(raw_pcm), chunk_size):
+#         recognizer.AcceptWaveform(raw_pcm[i:i + chunk_size])
+
+#     result = json.loads(recognizer.FinalResult())
+#     return result.get("text", "").lower().strip()
 
 
 # ---------------------------------------------------------------------------
@@ -249,7 +262,7 @@ def _compute_mfcc_score(wav_bytes: bytes, reference_word: str) -> float:
 
     return round(score, 2)
 
-
+ 
 def evaluate_round2(webm_bytes: bytes, word_entry: dict) -> dict:
     """
     Full Round 2 pipeline:
